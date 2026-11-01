@@ -11,6 +11,15 @@ Dieses Repository enthält den **stabilen Python-Treiber**, **vier native Touchs
 
 ---
 
+## 📸 Hardware & Touchscreen-Apps
+
+| Sensor: LD06 DToF LiDAR | App 1: `lidar_omni` (Flaggschiff) | App 2: `lidar_radar` | App 3: `lidar_8zones` |
+|:---:|:---:|:---:|:---:|
+| <img src="docs/screenshots/ld06_sensor.jpg" width="180" alt="LD06 LiDAR Sensor"> | <img src="docs/screenshots/txt40_lidar_omni.png" width="180" alt="lidar_omni App"> | <img src="docs/screenshots/txt40_lidar_radar.png" width="180" alt="lidar_radar App"> | <img src="docs/screenshots/txt40_lidar_8zones.png" width="180" alt="lidar_8zones App"> |
+| *LD06 DToF LiDAR an USB* | *8-Wege Ausweichen & Radar* | *Zirkular-Radar mit Zoom* | *8-Sektoren Dashboard* |
+
+---
+
 ## 📑 Inhaltsverzeichnis
 
 - [Hardware-Übersicht: LD06 DToF LiDAR](#-hardware-übersicht-ld06-dtof-lidar)
@@ -118,11 +127,16 @@ Details siehe [`docs/OMNIWHEEL_AVOIDANCE.md`](docs/OMNIWHEEL_AVOIDANCE.md).
 
 ```
 FT-txt-4.0-ld06-lidar/
-├── README.md                              <- Hauptdokumentation
+├── README.md                              <- Hauptdokumentation mit Screenshots
 ├── LICENSE                                <- MIT Lizenz
 ├── driver/
 │   └── ld06.py                            <- Robuster LD06 Treiber (CRC8 + Confidence-Filter)
 ├── docs/
+│   ├── screenshots/                       <- Bildgalerie (Sensor & App-Screenshots)
+│   │   ├── ld06_sensor.jpg
+│   │   ├── txt40_lidar_omni.png           <- Live-Screenshot vom TXT 4.0 Touchscreen
+│   │   ├── txt40_lidar_radar.png
+│   │   └── txt40_lidar_8zones.png
 │   ├── TXT40_INTEGRATION_AND_INSIGHTS.md  <- Architektur-, Display- & Filteranalyse
 │   └── OMNIWHEEL_AVOIDANCE.md             <- 8-Wege Holonomes Fahrwerk & Kinematik
 └── apps/
