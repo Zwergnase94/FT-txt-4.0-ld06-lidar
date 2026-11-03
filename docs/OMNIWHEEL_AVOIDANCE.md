@@ -1,14 +1,14 @@
-# Omniwheels 4-Motor Holonomic Drive & Obstacle Avoidance
+# Omniwheel-Fahrwerk & 8-Wege-Ausweichlogik
 
-Dieses Dokument beschreibt die Ansteuerung des 4-Rad Omniwheel/Mecanum-Fahrwerks auf dem fischertechnik TXT 4.0 und die Implementierung des 8-Wege reaktiven Ausweichalgorithmus.
+Dieses Dokument beschreibt die Ansteuerung des 4-motorischen Omniwheel-/Mecanum-Fahrwerks am fischertechnik TXT 4.0 in der App `lidar_omni`.
 
 ---
 
-## 1. Hardware & Motor-Konfiguration
+## 1. Motoranordnung (M1–M4)
 
-Das omnidirektionale Fahrwerk verwendet 4 fischertechnik Encodermotoren, die direkt an den Motorausgängen M1 bis M4 des TXT 4.0 angeschlossen sind:
+Die vier Encodermotoren sind direkt an den Ausgängen **M1 bis M4** des TXT 4.0 angeschlossen:
 
-```
+```text
         ▲ VORNE (0°)
         │
 ┌───────┴───────┐
@@ -21,27 +21,27 @@ Das omnidirektionale Fahrwerk verwendet 4 fischertechnik Encodermotoren, die dir
         ▼ HINTEN (180°)
 ```
 
-### Motor-Drehrichtungen (`Motor.CCW` vs `Motor.CW`):
+### Drehrichtungen (`Motor.CCW` / `Motor.CW`)
 
-| Richtung | M1 | M2 | M3 | M4 | Synchronisation |
+| Fahrtrichtung | M1 (VL) | M2 (VR) | M3 (HR) | M4 (HL) | Ansteuerung |
 |---|---|---|---|---|---|
 | **VORNE** | CCW | CCW | CCW | CCW | `M1.start_sync(M2, M3, M4)` |
 | **HINTEN** | CW | CW | CW | CW | `M1.start_sync(M2, M3, M4)` |
 | **LINKS** | CCW | CW | CW | CCW | `M1.start_sync(M2, M3, M4)` |
 | **RECHTS** | CW | CCW | CCW | CW | `M1.start_sync(M2, M3, M4)` |
-| **VORNE-LINKS** | CCW | Stopp | Stopp | CCW | Diagonal aktiv (M1, M4) |
-| **VORNE-RECHTS** | Stopp | CCW | CCW | Stopp | Diagonal aktiv (M2, M3) |
-| **HINTEN-LINKS** | Stopp | CW | CW | Stopp | Diagonal aktiv (M2, M3) |
-| **HINTEN-RECHTS** | CW | Stopp | Stopp | CW | Diagonal aktiv (M1, M4) |
+| **VORNE-LINKS** | CCW | Stopp | Stopp | CCW | Diagonal (M1, M4) |
+| **VORNE-RECHTS** | Stopp | CCW | CCW | Stopp | Diagonal (M2, M3) |
+| **HINTEN-LINKS** | Stopp | CW | CW | Stopp | Diagonal (M2, M3) |
+| **HINTEN-RECHTS** | CW | Stopp | Stopp | CW | Diagonal (M1, M4) |
 | **STOPP** | Stopp | Stopp | Stopp | Stopp | `M1.stop_sync(M2, M3, M4)` |
 
 ---
 
-## 2. Der 8-Wege Ausweich-Algorithmus
+## 2. 8-Wege-Ausweichalgorithmus
 
-Das LiDAR-Modul sammelt kontinuierlich 360°-Scans. Das Sichtfeld wird in **8 gleich große Sektoren zu je 45°** unterteilt:
+Der 360°-Scan des LiDARs wird in **8 Sektoren zu je 45°** aufgeteilt:
 
-```
+```text
               VORNE (0°)
                  [0]
        [7]                 [1]
@@ -55,11 +55,7 @@ LINKS [6] ─── ROBOTER ─── [2] RECHTS
              HINTEN (180°)
 ```
 
-### Reaktionslogik:
-1. **Gefahr erkennen:** Unterschreitet der gemessene Abstand in einem Sektor den Schwellenwert von `TRIGGER_DIST = 20.0 cm`, wird dieser Sektor als aktive Bedrohung markiert.
-2. **Fluchtweg prüfen:** Das System liest den Abstand im exakt gegenüberliegenden Sektor (`OPPOSITE_MAP`).
-   - Wenn der Fluchtweg $> 22.0\text{ cm}$ frei ist, setzt sich der Roboter sofort in die Fluchtrichtung in Bewegung.
-   - Wenn auch der Fluchtweg blockiert ist, stoppt der Roboter sofort aus Sicherheitsgründen.
-3. **Hysterese & Entwarnung:**
-   - Sobald das auslösende Hindernis wieder mehr als `RELEASE_DIST = 25.0 cm` entfernt ist, wird das Manöver beendet und der Roboter bremst sanft ab.
-   - Diese Hysterese von 5 cm verhindert nervöses Ruckeln an der Erkennungsgrenze.
+### Ablauf im Betrieb
+1. **Hindernis erkennen:** Fällt der Abstand in einem Sektor unter `TRIGGER_DIST = 20,0 cm`, wird ein Ausweichmanöver in die gegenüberliegende Richtung vorbereitet.
+2. **Fluchtweg prüfen:** Der gegenüberliegende Sektor muss mindestens `CLEAR_ESCAPE_MIN = 22,0 cm` Platz bieten. Ist auch dieser Weg versperrt, stoppen alle Motoren (`BLOCKIERT`).
+3. **Hysterese:** Das Ausweichen läuft weiter, bis der Abstand zum auslösenden Hindernis wieder über `RELEASE_DIST = 25,0 cm` liegt. Die 5-cm-Hysterese verhindert ruckartiges Umschalten an der Auslösegrenze.
