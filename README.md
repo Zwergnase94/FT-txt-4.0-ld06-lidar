@@ -9,6 +9,8 @@
 Python-Treiber und vier Touchscreen-Apps für den **LDROBOT LD06 / LD19** sowie **YDLIDAR** (2- und 3-Byte-Protokoll) am **fischertechnik TXT 4.0 Controller** – inklusive der Bluetooth-gesteuerten **Omni 8-Zonen** App mit stufenweiser Bremsrampe und Kollisionsstopp für Omniwheel- und Mecanum-Roboter.
 
 > **Älterer TXT Controller?** Für den klassischen **ROBOTICS TXT** mit Community-Firmware gibt es ein eigenes Repository: [FT-txt-ld06-lidar](https://github.com/Zwergnase94/FT-txt-ld06-lidar).
+>
+> **Bluetooth-Fernsteuerung am TXT 4.0:** Für die Anbindung des blauen fischertechnik **Bluetooth Control Set** (bzw. der BT Control App) über die ESP32 BLE-zu-I²C-Bridge (`0x42` an `EXT1`/`EXT2`) wird das Projekt **[txt40-bt-remote-bridge](https://github.com/Zwergnase94/txt40-bt-remote-bridge)** verwendet.
 
 ---
 
@@ -34,7 +36,7 @@ Details zur Steckerbelegung stehen unter [`docs/pinout_and_hardware.md`](docs/pi
 Alle vier Apps liegen als fertige Workspaces für `/opt/ft/workspaces/` vor und lassen sich direkt über das Touchscreen-Menü des TXT 4.0 starten.
 
 ### 1. `lidar_omni` – Omni 8-Zonen (Bluetooth-Steuerung mit Brems- & Stopp-Schutz)
-Baut auf der 8-Zonen-Ansicht auf und steuert einen 4-Rad-Omniwheel-Roboter (`M1`–`M4`) über das **Bluetooth Control Set** bzw. die **BT Control App** (via ESP32 BLE-zu-I²C-Bridge `0x42` an `EXT1`/`EXT2`, Bus `3` oder `/dev/input/js0`):
+Baut auf der 8-Zonen-Ansicht auf und steuert einen 4-Rad-Omniwheel-Roboter (`M1`–`M4`) über das **Bluetooth Control Set** bzw. die **BT Control App** (via [ESP32 BLE-zu-I²C-Bridge (`txt40-bt-remote-bridge`)](https://github.com/Zwergnase94/txt40-bt-remote-bridge), `0x42` an `EXT1`/`EXT2`, Bus `3` oder `/dev/input/js0`):
 * **Linker Joystick (alle 8 Richtungen):** Fährt in den gewählten Sektor (`V`, `VR`, `R`, `HR`, `H`, `HL`, `L`, `VL`), reduziert die Motorgeschwindigkeit ab **30 cm** (`300 mm`) schrittweise herunter (Gelbe Zone) und stoppt bei **`<= 18 cm`** (`180 mm`) automatisch (Rote Zone mit `18,5 cm` Freigabe-Hysterese).
 * **Rechter Joystick (Links/Rechts):** Dreht den Roboter auf der Stelle um die eigene Achse.
 * **8-Zonen Touch-Dashboard:** Kreisförmige Sektor-Warnanzeige rund um das Omniwheel-Symbol mit **18-cm-Stopp-Ring**, acht Kacheln mit Zentimeter-Werten und Live-Statuszeile. Tippen auf das Fahrzeugsymbol oder `Motor: AN` pausiert die Motoren; Tippen auf `Dreh: L/R` kehrt die Drehrichtung um.

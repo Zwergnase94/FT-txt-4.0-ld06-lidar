@@ -60,7 +60,7 @@ LINKS [6] ─── ROBOTER ─── [2] RECHTS
 ```
 
 ### Steuerung (25 Hz Regelschleife)
-* **Bluetooth-Eingabe:** Liest die blaue fischertechnik Bluetooth-Fernsteuerung bzw. die BT Control App über die ESP32 BLE-zu-I²C-Bridge (`EXT1`/`EXT2`, Bus `3`, Adresse `0x42`) oder `/dev/input/js0`.
+* **Bluetooth-Eingabe:** Liest die blaue fischertechnik Bluetooth-Fernsteuerung bzw. die BT Control App über die ESP32 BLE-zu-I²C-Bridge (`EXT1`/`EXT2`, Bus `3`, Adresse `0x42`) oder `/dev/input/js0`. Firmware, Schaltplan und Setup der Bridge sind im Repository **[txt40-bt-remote-bridge](https://github.com/Zwergnase94/txt40-bt-remote-bridge)** beschrieben.
 * **Rechter Joystick (Links/Rechts):** Dreht den Roboter proportional um die eigene Achse.
 * **Linker Joystick (360° → 8 Sektoren):** Bestimmt Fahrtrichtung (`0..7`) und Soll-Geschwindigkeit (`MIN_SPEED = 160` bis `MAX_SPEED = 512`, `DEADZONE = 0.16`).
 * **Bremsrampe (`30 cm → 18 cm`):** Befindet sich im gewählten Fahrsektor ein Hindernis zwischen `SLOW_DIST_MM = 300` (`30 cm`, gelbe Zone) und `STOP_DIST_MM = 180` (`18 cm`), wird das Motortempo linear heruntergeregelt.
