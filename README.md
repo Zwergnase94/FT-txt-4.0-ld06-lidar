@@ -6,7 +6,7 @@
 [![UI](https://img.shields.io/badge/GUI-QtQuick%20%2F%20QML-orange.svg)](https://www.qt.io/)
 [![License: MIT](https://img.shields.io/badge/License-MIT-purple.svg)](LICENSE)
 
-Python-Treiber und vier Touchscreen-Apps für den **LDROBOT LD06 360°-LiDAR** am **fischertechnik TXT 4.0 Controller** – inklusive einer autonomen 8-Wege-Ausweichsteuerung für Omniwheel- und Mecanum-Roboter.
+Python-Treiber und vier Touchscreen-Apps für den **LDROBOT LD06 / LD19** sowie **YDLIDAR** (2- und 3-Byte-Protokoll) am **fischertechnik TXT 4.0 Controller** – inklusive der Bluetooth-gesteuerten **Omni 8-Zonen** App mit stufenweiser Bremsrampe und Kollisionsstopp für Omniwheel- und Mecanum-Roboter.
 
 > **Älterer TXT Controller?** Für den klassischen **ROBOTICS TXT** mit Community-Firmware gibt es ein eigenes Repository: [FT-txt-ld06-lidar](https://github.com/Zwergnase94/FT-txt-ld06-lidar).
 
@@ -33,12 +33,12 @@ Details zur Steckerbelegung stehen unter [`docs/pinout_and_hardware.md`](docs/pi
 
 Alle vier Apps liegen als fertige Workspaces für `/opt/ft/workspaces/` vor und lassen sich direkt über das Touchscreen-Menü des TXT 4.0 starten.
 
-### 1. `lidar_omni` – 8-Wege-Ausweichsteuerung (Omniwheels)
-Reaktive Hindernisvermeidung für ein 4-motorisches Omniwheel-/Mecanum-Fahrwerk (M1–M4):
-* **Live-Radar:** Zeigt Punktwolke, eine rote 20-cm-Warnzone und die aktuelle Ausweichrichtung als Pfeil.
-* **Direktes Ausweichen:** Unterschreitet ein Objekt in einem der 8 Sektoren **20 cm**, fährt der Roboter ohne Drehung in die Gegenrichtung – sofern dort mindestens **22 cm** frei sind (sonst Sicherheitsstopp `BLOCKIERT`).
-* **Hysterese:** Das Manöver endet erst bei **> 25 cm** Abstand, um Hin- und Herpendeln zu vermeiden.
-* **Sicherer Start:** Startet standardmäßig mit deaktivierten Motoren (`Fahren: AUS`), umschaltbar per Touch-Button.
+### 1. `lidar_omni` – Omni 8-Zonen (Bluetooth-Steuerung mit Brems- & Stopp-Schutz)
+Baut auf der 8-Zonen-Ansicht auf und steuert einen 4-Rad-Omniwheel-Roboter (`M1`–`M4`) über das **Bluetooth Control Set** bzw. die **BT Control App** (via ESP32 BLE-zu-I²C-Bridge `0x42` an `EXT1`/`EXT2`, Bus `3` oder `/dev/input/js0`):
+* **Linker Joystick (alle 8 Richtungen):** Fährt in den gewählten Sektor (`V`, `VR`, `R`, `HR`, `H`, `HL`, `L`, `VL`), reduziert die Motorgeschwindigkeit ab **30 cm** (`300 mm`) schrittweise herunter (Gelbe Zone) und stoppt bei **`<= 18 cm`** (`180 mm`) automatisch (Rote Zone mit `18,5 cm` Freigabe-Hysterese).
+* **Rechter Joystick (Links/Rechts):** Dreht den Roboter auf der Stelle um die eigene Achse.
+* **8-Zonen Touch-Dashboard:** Kreisförmige Sektor-Warnanzeige rund um das Omniwheel-Symbol mit **18-cm-Stopp-Ring**, acht Kacheln mit Zentimeter-Werten und Live-Statuszeile. Tippen auf das Fahrzeugsymbol oder `Motor: AN` pausiert die Motoren; Tippen auf `Dreh: L/R` kehrt die Drehrichtung um.
+* **Performance-Optimiert:** `25 Hz` Regelschleife, lock-freie `read_into_sectors`-Auswertung im Worker-Thread und atomare QML-Canvas-Aktualisierung (`5 FPS` mit Dirty-Check).
 
 Die genaue Motorbelegung und Drehrichtungs-Tabelle ist in [`docs/OMNIWHEEL_AVOIDANCE.md`](docs/OMNIWHEEL_AVOIDANCE.md) dokumentiert.
 
@@ -60,7 +60,7 @@ Ausführliche Hintergründe sind in [`docs/TXT40_INTEGRATION_AND_INSIGHTS.md`](d
 
 * **Nutzbarer Display-Bereich (240 × 230 Pixel):** Das physische Display hat 240 × 320 Pixel, allerdings reserviert `qtmenu` Ränder für Systemleisten. Alle Steuerelemente sind daher auf `y ≤ 225` ausgelegt, damit nichts abgeschnitten wird.
 * **Fix gegen eingefrorene Anzeige (`ftgui` Race Condition):** Im originalen `ftgui.py` kann die schnelle lokale MQTT-Antwort (`127.0.0.1`) `setter_request` dauerhaft blockieren, sodass das Display nach wenigen Sekunden einfriert. [`lib/display.py`](apps/lidar_omni/lib/display.py) behebt das per Lock, 150-ms-Watchdog und gebündelten Attribut-Updates (`set_attrs`).
-* **Filterung von 6-cm-Geisterwerten:** Schwache Reflexionen an fernen Kanten erzeugen beim LD06 vereinzelt Rauschpunkte mit niedriger Signalstärke (`conf` ~20–25), die ungefiltert als Hindernis bei ca. 6 cm erscheinen. [`driver/ld06.py`](driver/ld06.py) prüft jedes Paket per CRC-8 und verwirft Punkte mit `conf < 100` oder `dist < 30 mm`.
+* **Multi-Protokoll-Treiber & Filterung von Geisterwerten:** [`driver/ld06.py`](driver/ld06.py) erkennt automatisch **LD06/LD19** (`0x54 0x2C`, CRC-8 `0x4D`) sowie **YDLIDAR 2-/3-Byte** (`0xAA 0x55`, XOR-16), filtert schwache Streulicht-Reflexionen (`conf < 100`) sowie Eigenreflexionen (`dist < 30 mm`) heraus und bietet Zero-Allocation-Schnellpfade (`read_into_sectors`, `read_into_radar`, `fill_buffer`).
 
 ---
 
@@ -98,12 +98,12 @@ while True:
 ```text
 FT-txt-4.0-ld06-lidar/
 ├── driver/
-│   └── ld06.py                            # LD06-Treiber (CRC-8 & Signalstärken-Filter)
+│   └── ld06.py                            # Universal-Treiber (LD06/LD19 & YDLIDAR, Zero-Allocation)
 ├── apps/
-│   ├── lidar_omni/                        # 8-Wege Omniwheel-Ausweichsteuerung
+│   ├── lidar_omni/                        # Omni 8-Zonen (BT-Steuerung + 30->18cm Brems- & Stopp-Schutz)
 │   │   ├── lidar_omni.py
 │   │   ├── ld06.py
-│   │   └── lib/ (display.py, display.qml, omni_drive.py)
+│   │   └── lib/ (display.py, display.qml, ft_bt_remote.py, omni_drive.py)
 │   ├── lidar_radar/                       # 360°-Radar mit Zoom
 │   ├── lidar_8zones/                      # 8-Sektoren-Balkenanzeige
 │   └── lidar_web/                         # Browser-Ansicht (HTTP Port 8088)
